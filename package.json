@@ -1,0 +1,36 @@
+{
+  "name": "composeanything",
+  "version": "0.1.0",
+  "description": "Un copiloto de IA pegado a MuseScore: panel de chat + servidor MCP que compone, edita y transcribe en vivo.",
+  "main": "src/app/main.js",
+  "bin": {
+    "composeanything-mcp": "src/mcp/server.js"
+  },
+  "scripts": {
+    "start": "electron .",
+    "mcp": "node src/mcp/server.js",
+    "test": "node --test",
+    "selftest": "node scripts/selftest-live.js",
+    "install-plugin": "node scripts/install-plugin.js"
+  },
+  "keywords": [
+    "musescore",
+    "mcp",
+    "ai",
+    "music",
+    "composition",
+    "electron"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "fast-xml-parser": "^5.11.2",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "electron": "^41.7.1"
+  }
+}

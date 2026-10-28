@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.composeanything/
+*.tmp
+# Exportaciones generadas por las pruebas
+test/.tmp/
