@@ -15,8 +15,8 @@
     "mock": "node src/dev/mock-musescore.js",
     "smoke": "electron . --smoke-test",
     "icon": "node scripts/make-icon.js",
-    "pack": "electron-builder --win --dir",
-    "dist": "electron-builder --win"
+    "pack": "electron-builder --win --dir --publish never",
+    "dist": "electron-builder --win --publish never"
   },
   "build": {
     "appId": "io.github.pentavm.composeanything",
