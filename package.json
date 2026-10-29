@@ -13,7 +13,50 @@
     "selftest": "node scripts/selftest-live.js",
     "install-plugin": "node scripts/install-plugin.js",
     "mock": "node src/dev/mock-musescore.js",
-    "smoke": "electron . --smoke-test"
+    "smoke": "electron . --smoke-test",
+    "icon": "node scripts/make-icon.js",
+    "pack": "electron-builder --win --dir",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "io.github.pentavm.composeanything",
+    "productName": "ComposeAnything",
+    "copyright": "Copyright (c) 2026 PentaVM",
+    "asar": false,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "plugin/**/*",
+      "scripts/dock-windows.ps1",
+      "build/icon.png",
+      "LICENSE",
+      "NOTICE.md",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "ComposeAnything-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ComposeAnything",
+      "deleteAppDataOnUninstall": false
+    }
   },
   "repository": {
     "type": "git",
@@ -39,6 +82,7 @@
     "ws": "^8.22.0"
   },
   "devDependencies": {
-    "electron": "^41.7.1"
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0"
   }
 }

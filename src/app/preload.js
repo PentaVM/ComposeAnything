@@ -30,6 +30,11 @@ contextBridge.exposeInMainWorld('api', {
   pickFile: (kind) => invoke('file:pick', kind),
   pathOf: (file) => webUtils.getPathForFile(file),
   installPlugin: () => invoke('plugin:install'),
+  claude: {
+    status: () => invoke('claude:status'),
+    register: () => invoke('claude:register'),
+    unregister: () => invoke('claude:unregister'),
+  },
   dock: () => invoke('window:dock'),
   pin: (on) => invoke('window:pin', on),
   reveal: (p) => invoke('shell:reveal', p),

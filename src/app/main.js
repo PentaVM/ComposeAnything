@@ -9,7 +9,8 @@ const { Store } = require('../core/store');
 const { Session } = require('../core/session');
 const { Agent } = require('../core/agent');
 const { callTool } = require('../core/tools');
-const { installPlugin } = require('../core/plugin-install');
+const { installPlugin, ensurePlugin } = require('../core/plugin-install');
+const claude = require('../core/claude-desktop');
 const llm = require('../core/llm');
 const { dockWithMuseScore } = require('./dock');
 
@@ -81,6 +82,16 @@ handle('file:pick', async (kind) => {
   return r.canceled ? null : r.filePaths[0];
 });
 handle('plugin:install', () => installPlugin({ documents: app.getPath('documents') }));
+
+// Servidor MCP: se lanza con el propio ejecutable en modo Node (ELECTRON_RUN_AS_NODE), así no hace falta tener Node instalado.
+const mcpLaunch = () => ({ command: process.execPath, args: [path.join(app.getAppPath(), 'src', 'mcp', 'server.js')], env: { ELECTRON_RUN_AS_NODE: '1' } });
+const quote = (s) => (/\s/.test(s) ? `"${s}"` : s);
+handle('claude:status', () => {
+  const l = mcpLaunch();
+  return { ...claude.isRegistered(), claudeCode: `claude mcp add composeanything -e ELECTRON_RUN_AS_NODE=1 -- ${quote(l.command)} ${quote(l.args[0])}` };
+});
+handle('claude:register', () => claude.registerMcp(mcpLaunch()));
+handle('claude:unregister', () => claude.unregisterMcp());
 handle('window:dock', () => dockWithMuseScore(win));
 handle('window:pin', (on) => { win.setAlwaysOnTop(!!on); return !!on; });
 handle('shell:reveal', (p) => { shell.showItemInFolder(String(p)); return true; });
@@ -91,6 +102,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 420, height: Math.min(900, wa.height), x: wa.x + wa.width - 420, y: wa.y,
     minWidth: 340, minHeight: 480, show: !SMOKE && !SHOT, backgroundColor: '#14161a', title: 'ComposeAnything',
+    icon: path.join(__dirname, '..', '..', 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.setMenuBarVisibility(false);
@@ -98,7 +110,17 @@ function createWindow() {
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   win.loadFile(path.join(__dirname, 'index.html'));
   if (SMOKE) win.webContents.once('did-finish-load', runSmokeTest);
-  if (SHOT) win.webContents.once('did-finish-load', runScreenshot);
+  else if (SHOT) win.webContents.once('did-finish-load', runScreenshot);
+  else win.webContents.once('did-finish-load', autoInstallPlugin);
+}
+
+// Primera ejecución: deja el plugin de MuseScore copiado (activarlo sigue siendo un paso manual en MuseScore).
+function autoInstallPlugin() {
+  try {
+    const r = ensurePlugin({ documents: app.getPath('documents'), store });
+    if (r.action === 'installed') emit({ type: 'notice', openConnect: true, text: 'Plugin de MuseScore instalado. Actívalo en MuseScore: Plugins → Gestionar plugins… → ComposeAnything.' });
+    else if (r.action === 'updated') emit({ type: 'notice', text: 'Plugin de MuseScore actualizado. Reinicia MuseScore para que lo recargue.' });
+  } catch (e) { emit({ type: 'notice', text: `No pude instalar el plugin automáticamente: ${e.message}` }); }
 }
 
 // Captura con contenido de ejemplo (para el README): electron . --screenshot=ruta.png

@@ -16,7 +16,16 @@
 - **Conoce tus gustos.** Un perfil con las obras y estilos que te gustan que se inyecta en cada conversación, y que la IA puede ampliar si le cuentas qué te gusta.
 - **Pegada a MuseScore.** Botón «Pegar»: MuseScore a la izquierda, la app a la derecha (Windows).
 
-## Inicio rápido
+## Instalación rápida (Windows)
+
+1. Consigue `ComposeAnything-Setup-<versión>.exe`: genéralo con `npm run dist` (queda en `dist/`) o, cuando haya una etiqueta `v*`, descárgalo de [Releases](https://github.com/PentaVM/ComposeAnything/releases) (lo compila y adjunta el CI).
+2. Ejecútalo. Se instala **para tu usuario, sin pedir administrador ni preguntas**, crea los accesos directos (escritorio y menú Inicio) y abre la app.
+3. En el primer arranque la app **copia sola el plugin** a `Documentos\MuseScore4\Plugins` y te muestra el único paso manual que queda: en MuseScore, *Plugins → Gestionar plugins… → ComposeAnything*, y luego *Plugins → ComposeAnything* con una partitura abierta.
+4. En ⚙ eliges tu IA. Si prefieres usar Claude Desktop, el botón de conexión (pastilla de arriba) tiene **Añadir a Claude Desktop**; reinicia Claude Desktop después.
+
+No necesitas Node ni Python instalados. El instalador **no está firmado**, así que Windows SmartScreen mostrará «Windows protegió su PC»: pulsa *Más información → Ejecutar de todas formas*. Para desinstalar: *Configuración → Aplicaciones* (tus obras y ajustes en `~/.composeanything` se conservan; el plugin copiado, `Documentos\MuseScore4\Plugins\composeanything.qml`, se borra a mano).
+
+## Desde el código fuente
 
 Necesitas **Node 20+** y **MuseScore Studio 4** reciente (probado con 4.7.6; el plugin usa la API de WebSocket para plugins, que no existe en versiones antiguas).
 
@@ -100,19 +109,21 @@ La partitura vive en un **modelo propio**: un JSON con un texto de notación com
 
 ## Qué está verificado y qué no
 
-**Verificado automáticamente (`npm test`, 40 pruebas):**
+**Verificado automáticamente (`npm test`, 46 pruebas):**
 - DSL, modelo, escritura atómica e idempotente, deshacer.
 - MusicXML: exportar, importar y volver a exportar una obra real de 43 compases sin perder una sola nota; y con **MuseScore 4.7.6 de verdad**: abrir el XML generado, exportar a PDF y `mscz → MusicXML → modelo`.
 - Servidor MCP real por stdio con un cliente MCP real.
 - Agente contra un servidor HTTP compatible con OpenAI: puntos de control, recuperación de JSON roto, reintentos ante 500, error 401, `stop()`.
 - Puente en vivo contra un **plugin simulado** fiel al protocolo (idempotencia, relectura, reconexión, degradación sin extensiones).
 - Transcripción de una melodía sintética y de un MIDI; revisión SATB; perfil y ajustes.
-- La app Electron arranca y la interfaz responde (`npm run smoke`).
+- La app Electron arranca y la interfaz responde (`npm run smoke`), también el `.exe` empaquetado; el servidor MCP arranca con ese mismo ejecutable en modo Node (como lo lanza Claude Desktop).
+- Autoinstalación del plugin (instala, actualiza, no revive si lo borras) y registro en Claude Desktop (mezcla, copia de seguridad, rechaza un JSON roto).
 
 **Sin verificar contra un MuseScore con el plugin activo** (requiere activar el plugin a mano, y no se hizo en el desarrollo):
 - La escritura real del plugin y sus **acciones extra** (armadura, dinámicas, cifrados, textos, letra con sílabas, voces 2–4). Están dentro de `try/catch` y devuelven un error en lugar de romper, y el propio puente relee la hoja y avisa de cualquier desajuste. Ejecuta **`npm run selftest -- --yes`** con una hoja de prueba para ver cuáles funcionan en tu versión.
 - El botón «Pegar» sobre la ventana real de MuseScore (el script compila y su ruta de error funciona, pero no se movió ninguna ventana en pruebas).
 - La ruta polifónica con `basic-pitch` y los proveedores de IA reales (solo se probó contra servidores simulados).
+- La ejecución del instalador NSIS en sí (se comprobó que se genera y que la app que contiene funciona, pero no se instaló en una máquina limpia) y el botón «Añadir a Claude Desktop» sobre tu Claude Desktop real.
 
 ## Límites conocidos
 
@@ -125,9 +136,12 @@ La partitura vive en un **modelo propio**: un JSON con un texto de notación com
 ## Desarrollo
 
 ```bash
-npm test                  # 40 pruebas (las de MuseScore se omiten si no está instalado)
+npm test                  # 46 pruebas (las de MuseScore se omiten si no está instalado)
 npm run mock              # plugin simulado en el puerto 8765, para desarrollar sin MuseScore
 npm run smoke             # arranca Electron oculto y comprueba la interfaz
+npm run pack              # app sin instalador en dist/win-unpacked (para probar rápido)
+npm run dist              # instalador NSIS en dist/ComposeAnything-Setup-<versión>.exe
+npm run icon              # regenera build/icon.png
 npx electron . --screenshot=docs/screenshot.png
 ```
 

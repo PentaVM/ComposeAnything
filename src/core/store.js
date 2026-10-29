@@ -13,6 +13,8 @@ const DEFAULT_SETTINGS = {
   output: 'file',              // file | live | both
   llm: { baseUrl: 'https://api.openai.com/v1', model: '', temperature: 0.7 },
   musescore: { wsUrl: 'ws://127.0.0.1:8765' },
+  pluginAutoInstall: true,     // la app copia/actualiza el plugin de MuseScore al arrancar
+  pluginInstalledOnce: false,  // true tras la primera copia: si lo borras, no se reinstala
 };
 
 const AUTONOMY_EVERY = { per_measure: 1, per_phrase: 4, per_section: 8, autonomous: Infinity };

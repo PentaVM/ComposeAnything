@@ -99,6 +99,7 @@ window.api.onEvent((ev) => {
     case 'status': setBusy(ev.state !== 'idle'); break;
     case 'error': addMsg('error', ev.message); setBusy(false); break;
     case 'score': refreshStatus(); break;
+    case 'notice': toast(ev.text, false, 12000); if (ev.openConnect) $('#connect').showModal(); break;
     default: break;
   }
 });
@@ -232,6 +233,18 @@ $('#saveProfile').onclick = async () => { await window.api.profile.setNotes({ st
 // --- conexión ---------------------------------------------------------------------------------------------------------
 $('#installPlugin').onclick = async () => { try { const r = await window.api.installPlugin(); $('#installState').textContent = (r.updated ? 'Actualizado en ' : 'Copiado a ') + r.path; } catch (e) { $('#installState').textContent = e.message; } };
 $('#checkConn').onclick = async () => { $('#connState').textContent = 'Comprobando…'; const st = await window.api.status(); $('#connState').textContent = st.live.connected ? `Conectado ✓ ${st.live.plugin?.plugin || ''}` : `Sin conexión: ${st.live.error || ''}`; refreshStatus(); };
+
+async function refreshClaude() {
+  try {
+    const c = await window.api.claude.status();
+    $('#claudeCode').value = c.claudeCode;
+    $('#claudeState').textContent = !c.found ? 'No encuentro Claude Desktop' : c.error ? c.error : c.registered ? 'Añadido ✓ (reinicia Claude Desktop)' : 'Sin añadir';
+  } catch (e) { $('#claudeState').textContent = e.message; }
+}
+$('#regClaude').onclick = async () => { try { const r = await window.api.claude.register(); $('#claudeState').textContent = 'Añadido ✓. ' + r.note; } catch (e) { $('#claudeState').textContent = e.message; } };
+$('#unregClaude').onclick = async () => { try { const r = await window.api.claude.unregister(); $('#claudeState').textContent = r.removed ? 'Quitado' : 'No estaba añadido'; } catch (e) { $('#claudeState').textContent = e.message; } };
+$('#claudeCode').onfocus = (e) => e.target.select();
+$('#connect').addEventListener('toggle', () => { if ($('#connect').open) refreshClaude(); });
 
 // --- arranque -----------------------------------------------------------------------------------------------------------
 (async function init() {
