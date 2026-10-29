@@ -157,7 +157,7 @@ function collectLyrics(model, from, to, sid) {
 }
 
 /** Escribe compases del modelo en la hoja abierta. */
-async function pushMeasures(client, model, { from = 1, to = measureCount(model), verify = true } = {}) {
+async function pushMeasures(client, model, { from = 1, to = measureCount(model), verify = true, only = null } = {}) {
   const report = { pushed: [], warnings: [], unsupportedLive: {}, ties: 0, verify: null, extended: false };
   const caps = await getCaps(client);
   report.extended = caps.extended;
@@ -172,9 +172,10 @@ async function pushMeasures(client, model, { from = 1, to = measureCount(model),
   }
   const starts = analysis.measures.map((m) => m.startTick);
 
+  const wanted = (n) => !only || only.includes(n);
   for (let n = from; n <= to; n++) {
     const m = model.measures[n];
-    if (!m) continue;
+    if (!m || !wanted(n)) continue;
     const ctx = contextAt(model, n);
     const startTick = starts[n - 1];
     const endTick = starts[n] ?? startTick + barLength(ctx.time) * TICKS_PER_UNIT;
@@ -232,18 +233,18 @@ async function pushMeasures(client, model, { from = 1, to = measureCount(model),
     }
   }
 
-  if (verify) report.verify = await verifyMeasures(client, model, from, to);
+  if (verify) report.verify = await verifyMeasures(client, model, from, to, only);
   return report;
 }
 
 /** Relee la hoja y compara voz 1 de cada compás/pentagrama con el modelo. */
-async function verifyMeasures(client, model, from, to) {
+async function verifyMeasures(client, model, from, to, only = null) {
   const a = await readScore(client);
   const mismatches = [];
   let checked = 0, spelling = 0;
   for (let n = from; n <= to; n++) {
     const m = model.measures[n];
-    if (!m) continue;
+    if (!m || (only && !only.includes(n))) continue;
     for (const [sid, text] of Object.entries(m.staves || {})) {
       const exp = expectedSeq(parseStream(splitVoices(text)[0]));
       const act = actualSeq(a.measures[n - 1]?.elements?.[`staff${Number(sid) - 1}`]);
