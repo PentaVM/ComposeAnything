@@ -223,7 +223,9 @@ function describeRange(model, from, to) {
   const parts = Object.entries(perStaff).filter(([, a]) => a.pitches.length).map(([label, a]) => {
     const lo = Math.min(...a.pitches), hi = Math.max(...a.pitches);
     const arrow = a.last - a.first >= 3 ? '↗' : a.first - a.last >= 3 ? '↘' : '→';
-    return `${label}: ${midiToName(a.first, key)}${arrow}${midiToName(a.last, key)} (rango ${midiToName(lo, key)}–${midiToName(hi, key)}, ${a.notes} notas${a.chords ? ', ' + a.chords + ' acordes' : ''})`;
+    const pl = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+    const counts = [a.notes ? pl(a.notes, 'nota', 'notas') : null, a.chords ? pl(a.chords, 'acorde', 'acordes') : null].filter(Boolean).join(', ');
+    return `${label}: ${midiToName(a.first, key)}${arrow}${midiToName(a.last, key)} (rango ${midiToName(lo, key)}–${midiToName(hi, key)}, ${counts})`;
   });
   return [
     `Compases ${from}${to > from ? '–' + to : ''}`,

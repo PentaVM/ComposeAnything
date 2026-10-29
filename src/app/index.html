@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; connect-src 'none'">
+  <title>ComposeAnything</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="titles">
+      <strong id="title">ComposeAnything</strong>
+      <span id="subtitle">sin obra</span>
+    </div>
+    <div class="header-actions">
+      <button id="btnDock" class="icon" title="Pegar a MuseScore: MuseScore a la izquierda, esta app a la derecha">⇥</button>
+      <button id="btnPin" class="icon" title="Mantener siempre visible" aria-pressed="false">📌</button>
+      <button id="btnProfile" class="icon" title="Perfil de gustos">♫</button>
+      <button id="btnSettings" class="icon" title="Ajustes de IA">⚙</button>
+    </div>
+  </header>
+
+  <button id="pill" class="pill off" title="Estado de la conexión con MuseScore">MuseScore: comprobando…</button>
+
+  <main id="chat" aria-live="polite"></main>
+
+  <section id="quick">
+    <button data-act="open" title="Exporta MusicXML y lo abre en MuseScore (con todas las marcas)">Abrir en MuseScore</button>
+    <button data-act="push" title="Escribe la obra en la hoja abierta">Escribir en vivo</button>
+    <button data-act="pdf">PDF</button>
+    <button data-act="import" title="Cargar un .mscz / MusicXML / MIDI para editarlo">Importar…</button>
+    <button data-act="audio" title="Transcribir un audio o MIDI a partitura">Audio → partitura…</button>
+    <button data-act="undo">Deshacer</button>
+  </section>
+
+  <section id="modes">
+    <label>Modo
+      <select id="autonomy">
+        <option value="per_measure">Pregunta cada compás</option>
+        <option value="per_phrase">Pregunta cada 4 compases</option>
+        <option value="per_section">Pregunta cada sección (8)</option>
+        <option value="autonomous">Autónomo: toda la obra</option>
+      </select>
+    </label>
+    <label>Salida
+      <select id="output">
+        <option value="file">Archivo MusicXML</option>
+        <option value="live">En vivo en MuseScore</option>
+        <option value="both">Ambos</option>
+      </select>
+    </label>
+  </section>
+
+  <footer>
+    <textarea id="input" rows="2" placeholder="Pídele música, cambios o una transcripción…  (Enter envía, Shift+Enter salto de línea)"></textarea>
+    <div class="send-row">
+      <button id="reset" class="ghost" title="Borrar la conversación (la obra se conserva)">Nueva conversación</button>
+      <span class="grow"></span>
+      <button id="stop" class="danger" hidden>Detener</button>
+      <button id="send" class="primary">Enviar</button>
+    </div>
+  </footer>
+</div>
+
+<div id="toast" role="status" hidden></div>
+
+<dialog id="settings">
+  <form method="dialog">
+    <h2>Ajustes de IA</h2>
+    <p class="hint">Cualquier API compatible con OpenAI. Para Claude usa el ajuste «Claude» o conéctalo por MCP desde Claude Desktop/Code.</p>
+    <div id="presets" class="chips"></div>
+    <label>URL base <input id="baseUrl" type="url" placeholder="https://api.openai.com/v1" autocomplete="off"></label>
+    <label>Modelo
+      <div class="row"><input id="model" list="modelList" placeholder="p. ej. gpt-4.1, claude-sonnet-4-5, llama3.1" autocomplete="off"><button type="button" id="loadModels">Cargar lista</button></div>
+      <datalist id="modelList"></datalist>
+    </label>
+    <label>Temperatura <input id="temperature" type="number" min="0" max="2" step="0.1"></label>
+    <label>Clave de API
+      <div class="row"><input id="apiKey" type="password" placeholder="(no se muestra)" autocomplete="off"><button type="button" id="saveKey">Guardar</button></div>
+      <small id="keyState"></small>
+    </label>
+    <label>Idioma de las respuestas
+      <select id="language"><option value="es">Español</option><option value="en">English</option></select>
+    </label>
+    <label>Plugin de MuseScore (WebSocket) <input id="wsUrl" placeholder="ws://127.0.0.1:8765" autocomplete="off"></label>
+    <menu><button value="close" class="primary">Cerrar</button></menu>
+  </form>
+</dialog>
+
+<dialog id="profile">
+  <form method="dialog">
+    <h2>Perfil de gustos</h2>
+    <p class="hint">La IA lo lee en cada conversación para componer a tu manera. También puede ampliarlo ella misma si le cuentas qué te gusta.</p>
+    <h3>Obras que te gustan</h3>
+    <ul id="works"></ul>
+    <div class="row3">
+      <input id="wTitle" placeholder="Obra o estilo">
+      <input id="wComposer" placeholder="Compositor">
+      <input id="wNotes" placeholder="Qué te gusta de ella">
+    </div>
+    <button type="button" id="addWork">Añadir</button>
+    <label>Notas de estilo <textarea id="styleNotes" rows="3" placeholder="oscuro, expresionista, mucho rubato…"></textarea></label>
+    <label>Evitar (una por línea) <textarea id="dislikes" rows="3" placeholder="finales alegres&#10;ritmos de vals"></textarea></label>
+    <menu><button type="button" id="saveProfile" class="primary">Guardar</button><button value="close">Cerrar</button></menu>
+  </form>
+</dialog>
+
+<dialog id="connect">
+  <form method="dialog">
+    <h2>Conectar con MuseScore</h2>
+    <p>El plugin abre un canal local (puerto 8765) para escribir en la hoja abierta.</p>
+    <ol>
+      <li><button type="button" id="installPlugin">Instalar plugin</button> <small id="installState"></small></li>
+      <li>En MuseScore: <b>Plugins → Gestionar plugins…</b> y activa «ComposeAnything».</li>
+      <li>Abre una partitura (con los mismos instrumentos y armadura que la obra) y elige <b>Plugins → ComposeAnything</b>.</li>
+    </ol>
+    <p><button type="button" id="checkConn">Comprobar conexión</button> <small id="connState"></small></p>
+    <p class="hint">Sin el plugin sigues teniendo <b>Abrir en MuseScore</b>, que lo muestra todo (armadura, dinámicas, pedal, ligaduras).</p>
+    <menu><button value="close" class="primary">Cerrar</button></menu>
+  </form>
+</dialog>
+
+<script src="renderer.js"></script>
+</body>
+</html>
